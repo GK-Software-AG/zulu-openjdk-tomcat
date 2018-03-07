@@ -98,8 +98,8 @@ RUN set -eux; \
 	\
 	export GNUPGHOME="$(mktemp -d)"; \
 	for key in $GPG_KEYS; do \
-		# to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80
-		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+		# to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80 - else ha.pool.sks-keyservers.net
+		gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key"; \
 	done; \
 	\
 	apt-get install -y --no-install-recommends wget ca-certificates; \
