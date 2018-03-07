@@ -1,4 +1,4 @@
-FROM openjdk:8-jre
+FROM azul/zulu-openjdk:8
 
 ENV CATALINA_HOME /usr/local/tomcat
 ENV PATH $CATALINA_HOME/bin:$PATH
@@ -9,34 +9,53 @@ WORKDIR $CATALINA_HOME
 ENV TOMCAT_NATIVE_LIBDIR $CATALINA_HOME/native-jni-lib
 ENV LD_LIBRARY_PATH ${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$TOMCAT_NATIVE_LIBDIR
 
+# taken from librbary/openjdk
+
+# add a simple script that can auto-detect the appropriate JAVA_HOME value
+# based on whether the JDK or only the JRE is installed
+RUN { \
+		echo '#!/bin/sh'; \
+		echo 'set -e'; \
+		echo; \
+		echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+	} > /usr/local/bin/docker-java-home \
+	&& chmod +x /usr/local/bin/docker-java-home
+
+# adopted from debian to ubuntu
+
 # runtime dependencies for Tomcat Native Libraries
-# Tomcat Native 1.2+ requires a newer version of OpenSSL than debian:jessie has available
+# Tomcat Native 1.2+ requires a newer version of OpenSSL than ubuntu:trusty has available
 # > checking OpenSSL library version >= 1.0.2...
 # > configure: error: Your version of OpenSSL is not compatible with this version of tcnative
 # see http://tomcat.10.x6.nabble.com/VOTE-Release-Apache-Tomcat-8-0-32-tp5046007p5046024.html (and following discussion)
 # and https://github.com/docker-library/tomcat/pull/31
-ENV OPENSSL_VERSION 1.1.0f-3+deb9u1
-RUN set -ex; \
-	currentVersion="$(dpkg-query --show --showformat '${Version}\n' openssl)"; \
-	if dpkg --compare-versions "$currentVersion" '<<' "$OPENSSL_VERSION"; then \
-		if ! grep -q stretch /etc/apt/sources.list; then \
-# only add stretch if we're not already building from within stretch
+ENV OPENSSL_VERSION 1.1.0g-2ubuntu2
+RUN dpkg -l openssl; \		
+	isOpenSslInstalled=$?; \
+	set -ex; \
+	if [ $isOpenSslInstalled -eq 0 ]; then \
+		currentVersion="$(dpkg-query --show --showformat '${Version}\n' openssl)"; \			
+	fi; \
+	if [ $isOpenSslInstalled -ne 0 ] || [ dpkg --compare-versions "$currentVersion" '<<' "$OPENSSL_VERSION" ]; then \
+		if ! grep -q bionic /etc/apt/sources.list; then \
+# only add ubuntu:bionic if we're not already building from within buntu:bionic
 			{ \
-				echo 'deb http://deb.debian.org/debian stretch main'; \
-				echo 'deb http://security.debian.org stretch/updates main'; \
-				echo 'deb http://deb.debian.org/debian stretch-updates main'; \
-			} > /etc/apt/sources.list.d/stretch.list; \
+				echo 'deb http://archive.ubuntu.com/ubuntu/ bionic main'; \
+				# TODO: check why not running with this repos
+				# echo 'deb http://security.ubuntu.com/ubuntu/ bionic/updates main'; \
+				# echo 'deb http://archive.ubuntu.com/ubuntu/ bionic-updates main'; \
+			} > /etc/apt/sources.list.d/bionic.list; \
 			{ \
 # add a negative "Pin-Priority" so that we never ever get packages from stretch unless we explicitly request them
 				echo 'Package: *'; \
-				echo 'Pin: release n=stretch*'; \
+				echo 'Pin: release n=bionic*'; \
 				echo 'Pin-Priority: -10'; \
 				echo; \
 # ... except OpenSSL, which is the reason we're here
 				echo 'Package: openssl libssl*'; \
 				echo "Pin: version $OPENSSL_VERSION"; \
 				echo 'Pin-Priority: 990'; \
-			} > /etc/apt/preferences.d/stretch-openssl; \
+			} > /etc/apt/preferences.d/bionic-openssl; \
 		fi; \
 		apt-get update; \
 		apt-get install -y --no-install-recommends openssl="$OPENSSL_VERSION"; \
@@ -118,7 +137,7 @@ RUN set -eux; \
 		libapr1-dev \
 		libssl-dev \
 		make \
-		"openjdk-${JAVA_VERSION%%[.~bu-]*}-jdk=$JAVA_DEBIAN_VERSION" \
+		# "openjdk-${JAVA_VERSION%%[.~bu-]*}-jdk=$JAVA_DEBIAN_VERSION" \
 	; \
 	( \
 		export CATALINA_HOME="$PWD"; \
