@@ -127,7 +127,7 @@ RUN set -eux; \
 	gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz; \
 	tar -xvf tomcat.tar.gz --strip-components=1; \
 	rm bin/*.bat; \
-	rm webapps/*; \
+	rm -R webapps/*; \
 	rm tomcat.tar.gz*; \
 	rm -rf "$GNUPGHOME"; \
 	\
