@@ -38,7 +38,7 @@ RUN dpkg -l openssl; \
 	fi; \
 	if [ $isOpenSslInstalled -ne 0 ] || [ dpkg --compare-versions "$currentVersion" '<<' "$OPENSSL_VERSION" ]; then \
 		if ! grep -q bionic /etc/apt/sources.list; then \
-# only add ubuntu:bionic if we're not already building from within buntu:bionic
+# only add ubuntu:bionic if we're not already building from within ubuntu:bionic
 			{ \
 				echo 'deb http://archive.ubuntu.com/ubuntu/ bionic main'; \
 				# TODO: check why not running with this repos
@@ -98,6 +98,7 @@ RUN set -eux; \
 	\
 	export GNUPGHOME="$(mktemp -d)"; \
 	for key in $GPG_KEYS; do \
+		# to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80
 		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
 	done; \
 	\
@@ -126,6 +127,7 @@ RUN set -eux; \
 	gpg --batch --verify tomcat.tar.gz.asc tomcat.tar.gz; \
 	tar -xvf tomcat.tar.gz --strip-components=1; \
 	rm bin/*.bat; \
+	rm webapps/*; \
 	rm tomcat.tar.gz*; \
 	rm -rf "$GNUPGHOME"; \
 	\
