@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:8
+FROM azul/zulu-openjdk:9
 
 ENV CATALINA_HOME /usr/local/tomcat
 ENV PATH $CATALINA_HOME/bin:$PATH
