@@ -29,7 +29,7 @@ RUN { \
 # > configure: error: Your version of OpenSSL is not compatible with this version of tcnative
 # see http://tomcat.10.x6.nabble.com/VOTE-Release-Apache-Tomcat-8-0-32-tp5046007p5046024.html (and following discussion)
 # and https://github.com/docker-library/tomcat/pull/31
-ENV OPENSSL_VERSION 1.1.0g-2ubuntu3
+ENV OPENSSL_VERSION 1.1.0g-2ubuntu4
 RUN dpkg -l openssl; \		
 	isOpenSslInstalled=$?; \
 	set -ex; \
