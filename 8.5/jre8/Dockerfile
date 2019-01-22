@@ -1,4 +1,6 @@
-FROM azul/zulu-openjdk:8
+FROM azul/zulu-openjdk:8u192
+
+ARG EXPOSE_PORT=8080
 
 ENV CATALINA_HOME /usr/local/tomcat
 ENV PATH $CATALINA_HOME/bin:$PATH
@@ -30,11 +32,11 @@ RUN { \
 # see http://tomcat.10.x6.nabble.com/VOTE-Release-Apache-Tomcat-8-0-32-tp5046007p5046024.html (and following discussion)
 # and https://github.com/docker-library/tomcat/pull/31
 ENV OPENSSL_VERSION 1.1.0g-2ubuntu4
-RUN dpkg -l openssl; \		
+RUN dpkg -l openssl; \
 	isOpenSslInstalled=$?; \
 	set -ex; \
 	if [ $isOpenSslInstalled -eq 0 ]; then \
-		currentVersion="$(dpkg-query --show --showformat '${Version}\n' openssl)"; \			
+		currentVersion="$(dpkg-query --show --showformat '${Version}\n' openssl)"; \
 	fi; \
 	if [ $isOpenSslInstalled -ne 0 ] || [ dpkg --compare-versions "$currentVersion" '<<' "$OPENSSL_VERSION" ]; then \
 		if ! grep -q bionic /etc/apt/sources.list; then \
@@ -71,8 +73,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV GPG_KEYS 05AB33110949707C93A279E3D3EFE6B686867BA6 07E48665A34DCAFAE522E5E6266191C37C037D42 47309207D818FFD8DCD3F83F1931D684307A10A5 541FBE7D8F78B25E055DDEE13C370389288584E7 61B832AC2F1C5A90F0F9B00A1C506407564C17A3 713DA88BE50911535FE716F5208B0AB1D63011C7 79F7026C690BAA50B92CD8B66A3AD3F4F22C4FED 9BA44C2621385CB966EBA586F72C284D731FABEE A27677289986DB50844682F8ACB77FC2E86E29AC A9C5DF4D22E99998D9875A5110C01C5A2F6059E7 DCFD35E0BF8CA7344752DE8B6FB21E8933C60243 F3A04C595DB5B6A5F1ECA43E3B7BBB100D811BBE F7DA48BB64BCB84ECBA7EE6935CD23C10D498E23
 
 ENV TOMCAT_MAJOR 8
-ENV TOMCAT_VERSION 8.5.30
-ENV TOMCAT_SHA512 f7e84fed604dc183dc1bdad07f3b025547d95d024ccfb05da68f5f45256f3082af6ba28c7f0148ae4ee43637248a0074c92bb12198ab58331d0c4f04906b86b6
+ENV TOMCAT_VERSION 8.5.37
+ENV TOMCAT_SHA512 be6d6df8b49a760b2e181d4a45d8e6dc7bba5ef2ec6a000f8562cf5f34db5b7fac300cba65bca782bfd25a9f9d8d4a48625f1ad046115c1d6629ea5f210a2718
 
 ENV TOMCAT_TGZ_URLS \
 # https://issues.apache.org/jira/browse/INFRA-8753?focusedCommentId=14735394#comment-14735394
@@ -178,5 +180,5 @@ RUN set -e \
 		exit 1; \
 	fi
 
-EXPOSE 8080
+EXPOSE ${EXPOSE_PORT}
 CMD ["catalina.sh", "run"]
