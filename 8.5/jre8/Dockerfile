@@ -123,12 +123,16 @@ RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	\
-	apt-get install -y --no-install-recommends gnupg dirmngr; \
+	apt-get install -y --no-install-recommends gnupg2 dirmngr; \
 	\
 	export GNUPGHOME="$(mktemp -d)"; \
 	for key in $GPG_KEYS; do \
+		for server in ha.pool.sks-keyservers.net hkp://p80.pool.sks-keyservers.net:80 keyserver.ubuntu.com hkp://keyserver.ubuntu.com:80 pgp.mit.edu; \
+		do \
+			gpg --keyserver "$server" --recv-keys "$key" && break || echo "Trying new server ..."; \
+		done \
 		# to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80 - else ha.pool.sks-keyservers.net
-		gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key"; \
+
 	done; \
 	\
 	apt-get install -y --no-install-recommends wget ca-certificates; \
