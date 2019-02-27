@@ -13,8 +13,8 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# OpenJDK 8u201
-ENV ZULU_VERSION=8.34.0.1
+# OpenJDK 8u202
+ENV ZULU_VERSION=8.36.0.1
 
 #
 # Pull Zulu OpenJDK binaries from official repository:
