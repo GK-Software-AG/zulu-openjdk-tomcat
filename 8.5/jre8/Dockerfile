@@ -13,6 +13,15 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
+# install gosu
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y gosu; \
+    rm -rf /var/lib/apt/lists/*; \
+# verify that the binary works
+    gosu nobody true
+
 # OpenJDK 8u212
 ENV ZULU_VERSION=8.38.0.13
 
