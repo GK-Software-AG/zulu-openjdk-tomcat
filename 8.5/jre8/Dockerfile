@@ -13,15 +13,6 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-# install gosu
-
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y gosu; \
-    rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-    gosu nobody true
-
 # OpenJDK 8u212
 ENV ZULU_VERSION=8.38.0.13
 
@@ -135,16 +126,16 @@ RUN set -eux; \
 	apt-get install -y --no-install-recommends gnupg2 dirmngr; \
 	\
 	export GNUPGHOME="$(mktemp -d)"; \
-	for key in $GPG_KEYS; do \
-		for server in ha.pool.sks-keyservers.net hkp://p80.pool.sks-keyservers.net:80 keyserver.ubuntu.com hkp://keyserver.ubuntu.com:80 pgp.mit.edu; \
-		do \
-			gpg --keyserver "$server" --recv-keys "$key" && break || echo "Trying new server ..."; \
-		done \
-		# to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80 - else ha.pool.sks-keyservers.net
-
-	done; \
-	\
-	apt-get install -y --no-install-recommends wget ca-certificates; \
+    \
+    for key in $GPG_KEYS; do \
+        for server in ha.pool.sks-keyservers.net hkp://p80.pool.sks-keyservers.net:80 keyserver.ubuntu.com hkp://keyserver.ubuntu.com:80 eu.pool.sks-keyservers.net hkp://pgp.mit.edu:80 hkp://keys.gnupg.net:80; \
+        do \
+                gpg --keyserver "$server" --recv-keys "$key" && break || echo "Trying new server ..."; \
+        done \
+        # to run in a firewalled environment use: hkp://p80.pool.sks-keyservers.net:80 - else ha.pool.sks-keyservers.net
+    done; \
+    \
+	apt-get install -y --no-install-recommends wget ca-certificates zip unzip; \
 	\
 	success=; \
 	for url in $TOMCAT_TGZ_URLS; do \
@@ -170,6 +161,19 @@ RUN set -eux; \
 	tar -xvf tomcat.tar.gz --strip-components=1; \
 	rm bin/*.bat; \
 	rm -R webapps/*; \
+    # Change from default Dockerfile - Eliminate default web applications
+    rm -rf server/webapps/* && \
+    # Change from default Dockerfile - Obscuring server info
+    cd ${CATALINA_HOME}/lib && \
+    mkdir -p org/apache/catalina/util/ && \
+    unzip -j catalina.jar org/apache/catalina/util/ServerInfo.properties \
+        -d org/apache/catalina/util/ && \
+    sed -i 's/server.info=.*/server.info=Apache Tomcat/g' \
+        org/apache/catalina/util/ServerInfo.properties && \
+    zip -ur catalina.jar \
+        org/apache/catalina/util/ServerInfo.properties && \
+    rm -rf org && cd ${CATALINA_HOME}; \
+    # Change from default Dockerfile - end
 	rm tomcat.tar.gz*; \
 	rm -rf "$GNUPGHOME"; \
 	\
@@ -212,7 +216,11 @@ RUN set -eux; \
 # fix permissions (especially for running as non-root)
 # https://github.com/docker-library/tomcat/issues/35
     chmod -R +rX .; \
-    chmod 777 logs work
+    chmod 777 logs work; \
+# Change from default Dockerfile - Setting restrictive umask container-wide
+    echo "session optional pam_umask.so" >> /etc/pam.d/common-session && \
+    sed -i 's/UMASK.*022/UMASK           007/g' /etc/login.defs
+# Change from default Dockerfile - end
 
 # verify Tomcat Native is working properly
 RUN set -e \
@@ -223,6 +231,18 @@ RUN set -e \
 		echo >&2 "$nativeLines"; \
 		exit 1; \
 	fi
+
+# Change from default Dockerfile - Install gosu
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y gosu; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;\
+# verify that the binary works
+    gosu nobody true
+
+# Change from default Dockerfile - end
+
 
 EXPOSE ${EXPOSE_PORT}
 CMD ["catalina.sh", "run"]
